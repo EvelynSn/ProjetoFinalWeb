@@ -20,7 +20,7 @@
 ```bash
 cd backend
 npm install
-npm run dev
+npm run start
 ```
 
 ### Frontend
@@ -28,7 +28,7 @@ npm run dev
 ```bash
 cd frontend
 npm install
-npm run serve
+npm run dev
 ```
 
 ---
