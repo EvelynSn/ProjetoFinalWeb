@@ -1,7 +1,7 @@
 <template>
   <div class="turmas-container">
     <div class="page-header">
-      <h1>Gestão de turmas</h1>
+      <h1>Gestão de Turmas</h1>
       <button class="btn-primary" @click="showAddModal = true">
         <span>➕</span>
         Nova Turma
@@ -23,25 +23,15 @@
         </thead>
         <tbody>
           <tr v-for="turma in turmas" :key="turma.id">
-            <td>
-              {{ disciplinaTurma(turma.DisciplinaId) }}
-            </td>
+            <td>{{ disciplinaTurma(turma.DisciplinaId) }}</td>
             <td>{{ professorTurma(turma.ProfessorId) }}</td>
             <td>{{ turma.semestre }}</td>
             <td>{{ cursoTurma(turma.CursoId) }}</td>
             <td>{{ turma.horario }}</td>
             <td>{{ turma.vagasDisponiveis }}/{{ turma.vagasTotal }}</td>
             <td class="actions">
-              <button class="btn-icon" @click="editTurma(turma)" title="Editar">
-                ✏️
-              </button>
-              <button
-                class="btn-icon btn-danger"
-                @click="deleteTurma(turma.id)"
-                title="Excluir"
-              >
-                🗑️
-              </button>
+              <button class="btn-icon" @click="editTurma(turma)" title="Editar">✏️</button>
+              <button class="btn-icon btn-danger" @click="deleteTurma(turma.id)" title="Excluir">🗑️</button>
             </td>
           </tr>
         </tbody>
@@ -56,72 +46,57 @@
         </div>
         <div class="modal-body">
           <form @submit.prevent="saveTurma">
+            
             <div class="form-group">
               <label>Disciplina *</label>
               <select v-model="form.DisciplinaId" required>
                 <option value="">Selecione uma disciplina</option>
-                <option
-                  v-for="disciplina in disciplinas"
-                  :key="disciplina.id"
-                  :value="disciplina.id"
-                >
-                  {{ disciplina.nome }}
-                </option>
+                <option v-for="d in disciplinas" :key="d.id" :value="d.id">{{ d.nome }}</option>
               </select>
             </div>
+
             <div class="form-group">
               <label>Professor *</label>
               <select v-model="form.ProfessorId" required>
                 <option value="">Selecione um professor</option>
-                <option
-                  v-for="professor in professores"
-                  :key="professor.id"
-                  :value="professor.id"
-                >
-                  {{ professor.nome }}
-                </option>
+                <option v-for="p in professores" :key="p.id" :value="p.id">{{ p.nome }}</option>
               </select>
             </div>
+
             <div class="form-group">
               <label>Curso *</label>
               <select v-model="form.CursoId" required>
                 <option value="">Selecione um curso</option>
-                <option
-                  v-for="curso in cursos"
-                  :key="curso.id"
-                  :value="curso.id"
-                >
-                  {{ curso.nome }}
-                </option>
+                <option v-for="c in cursos" :key="c.id" :value="c.id">{{ c.nome }}</option>
               </select>
             </div>
+
             <div class="form-group">
               <label>Semestre *</label>
-              <input
-                v-model="form.semestre"
-                type="text"
-                required
-                placeholder="Ex: 2025.2"
-              />
+              <input v-model="form.semestre" type="text" required placeholder="Ex: 2025.2" />
             </div>
+
             <div class="form-group">
               <label>Horário *</label>
-              <input
-                v-model="form.horario"
-                type="text"
-                required
-                placeholder="Ex: Seg/Qua 08:00 - 10:00"
-              />
+              <input v-model="form.horario" type="text" required placeholder="Ex: Seg/Qua 08:00 - 10:00" />
             </div>
+
             <div class="form-group">
-              <label>Vagas *</label>
-              <input v-model="form.vagasTotal" type="number" required min="1" />
+              <label>Total de Vagas *</label>
+              <input 
+                v-model.number="form.vagasTotal" 
+                type="number" 
+                required 
+                @input="validateVagas"
+                :class="{ 'input-error': errors.vagasTotal }"
+                placeholder="Mínimo 15, Máximo 60"
+              />
+              <span v-if="errors.vagasTotal" class="error-text">{{ errors.vagasTotal }}</span>
             </div>
+
             <div class="modal-actions">
-              <button type="button" class="btn-secondary" @click="closeModal">
-                Cancelar
-              </button>
-              <button type="submit" class="btn-primary">
+              <button type="button" class="btn-secondary" @click="closeModal">Cancelar</button>
+              <button type="submit" class="btn-primary" :disabled="hasErrors">
                 {{ editingTurma ? "Atualizar" : "Salvar" }}
               </button>
             </div>
@@ -133,51 +108,56 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import api from "../services/api";
 
 const turmas = ref([]);
 const disciplinas = ref([]);
 const professores = ref([]);
+const cursos = ref([]);
 const showAddModal = ref(false);
 const editingTurma = ref(null);
-const cursos = ref([]);
+
 const form = ref({
   DisciplinaId: "",
   ProfessorId: "",
   CursoId: "",
   semestre: "",
   horario: "",
-  vagasTotal: 0,
+  vagasTotal: 15,
 });
+
+const errors = ref({
+  vagasTotal: ""
+});
+
+// Computada para desabilitar o botão se houver erro
+const hasErrors = computed(() => {
+  return errors.value.vagasTotal !== "" || form.value.vagasTotal === "";
+});
+
+// Validação em tempo real
+const validateVagas = () => {
+  const v = form.value.vagasTotal;
+  if (v === "" || v === null) {
+    errors.value.vagasTotal = "";
+  } else if (v < 15) {
+    errors.value.vagasTotal = "Uma turma deve ter no mínimo 15 vagas.";
+  } else if (v > 60) {
+    errors.value.vagasTotal = "O limite máximo é de 60 vagas por turma.";
+  } else {
+    errors.value.vagasTotal = "";
+  }
+};
 
 const loadTurmas = async () => {
   try {
     const response = await api.get("/turmas");
     turmas.value = response.data;
-    console.log(turmas.value);
   } catch (error) {
     console.error("Erro ao carregar turmas:", error);
   }
 };
-
-function disciplinaTurma(disciplinaId) {
-  const disciplina = disciplinas.value.find(
-    (disciplinaa) => disciplinaa.id == disciplinaId
-  );
-  return disciplina != null ? disciplina.nome : "";
-}
-function cursoTurma(cursoId) {
-  const curso = cursos.value.find((curso) => curso.id == cursoId);
-  return curso ? curso.nome : "Curso não encontrado";
-}
-
-function professorTurma(professorId) {
-  const professor = professores.value.find(
-    (professorr) => professorr.id == professorId
-  );
-  return professor ? professor.nome : "Sem professor";
-}
 
 const loadDisciplinas = async () => {
   try {
@@ -187,12 +167,13 @@ const loadDisciplinas = async () => {
     console.error("Erro ao carregar disciplinas:", error);
   }
 };
+
 const loadCursos = async () => {
   try {
     const response = await api.get("/cursos");
     cursos.value = response.data;
   } catch (error) {
-    console.error("Erro ao carregar disciplinas:", error);
+    console.error("Erro ao carregar cursos:", error);
   }
 };
 
@@ -205,21 +186,39 @@ const loadProfessores = async () => {
   }
 };
 
+function disciplinaTurma(id) {
+  const d = disciplinas.value.find(item => item.id == id);
+  return d ? d.nome : "N/A";
+}
+
+function cursoTurma(id) {
+  const c = cursos.value.find(item => item.id == id);
+  return c ? c.nome : "N/A";
+}
+
+function professorTurma(id) {
+  const p = professores.value.find(item => item.id == id);
+  return p ? p.nome : "Sem professor";
+}
+
 const editTurma = (turma) => {
   editingTurma.value = turma;
   form.value = {
-    disciplina_id: turma.disciplina_id || turma.disciplina?.id,
-    professor_id: turma.professor_id || turma.professor?.id,
+    DisciplinaId: turma.DisciplinaId,
+    ProfessorId: turma.ProfessorId,
+    CursoId: turma.CursoId,
     semestre: turma.semestre,
     horario: turma.horario,
-    vagas_total: turma.vagas_total || 50,
+    vagasTotal: turma.vagasTotal,
   };
   showAddModal.value = true;
 };
 
 const saveTurma = async () => {
+  validateVagas();
+  if (hasErrors.value) return;
+
   try {
-    console.log(form.value);
     if (editingTurma.value) {
       await api.put(`/turmas/${editingTurma.value.id}`, form.value);
     } else {
@@ -247,12 +246,14 @@ const closeModal = () => {
   showAddModal.value = false;
   editingTurma.value = null;
   form.value = {
-    disciplina_id: "",
-    professor_id: "",
+    DisciplinaId: "",
+    ProfessorId: "",
+    CursoId: "",
     semestre: "",
     horario: "",
-    vagas_total: 50,
+    vagasTotal: 15,
   };
+  errors.value.vagasTotal = "";
 };
 
 onMounted(() => {
@@ -266,7 +267,6 @@ onMounted(() => {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap');
 
-/* Container Principal */
 .turmas-container {
   padding: 32px;
   background: #fdfffe;
@@ -277,7 +277,6 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
 }
-
 
 .page-header {
   display: flex;
@@ -309,33 +308,20 @@ onMounted(() => {
   font-weight: 600;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(108, 92, 231, 0.25);
-  position: relative;
-  overflow: hidden;
-  font-family: 'Inter', sans-serif;
 }
 
-.btn-primary::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
-}
-
-.btn-primary:hover::before {
-  left: 100%;
-}
-
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background: #5f4fd1;
   transform: translateY(-3px);
   box-shadow: 0 6px 16px rgba(108, 92, 231, 0.3);
 }
 
-/* Tabela Estilo Card Moderno */
+.btn-primary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .table-container {
   background: white;
   border-radius: 20px;
@@ -368,11 +354,6 @@ onMounted(() => {
   font-weight: 500;
 }
 
-.data-table tbody tr:hover {
-  background: #fdfdff;
-}
-
-/* Ações e Ícones */
 .actions {
   display: flex;
   gap: 10px;
@@ -392,7 +373,6 @@ onMounted(() => {
 .btn-icon:hover {
   background: #6c5ce7;
   color: white;
-  transform: translateY(-2px);
 }
 
 .btn-icon.btn-danger {
@@ -400,12 +380,17 @@ onMounted(() => {
   background: #fff0f0;
 }
 
-.btn-icon.btn-danger:hover {
-  background: #ff6b6b;
-  color: white;
+.error-text {
+  color: #ff4d4d;
+  font-size: 12px;
+  margin-top: 4px;
+  display: block;
 }
 
-/* Modal Estilizado */
+.input-error {
+  border-color: #ff4d4d !important;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -426,7 +411,6 @@ onMounted(() => {
   width: 550px;
   max-width: 90%;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-  border: none;
   max-height: 90vh;
   overflow-y: auto;
 }
@@ -437,22 +421,6 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-family: 'Poppins', sans-serif;
-  font-weight: 700;
-  font-size: 22px;
-  color: #1a1a1a;
-}
-
-.btn-close {
-  background: none;
-  border: none;
-  font-size: 28px;
-  cursor: pointer;
-  color: #a0aec0;
 }
 
 .modal-body {
@@ -477,18 +445,14 @@ onMounted(() => {
   border: 2px solid #f0f0f0;
   border-radius: 12px;
   padding: 12px 16px;
-  font-family: 'Inter', sans-serif;
-  box-sizing: border-box;
   font-size: 14px;
   transition: all 0.3s ease;
-  background-color: #fff;
+  box-sizing: border-box;
 }
 
-.form-group input:focus,
-.form-group select:focus {
+.form-group input:focus {
   border-color: #6c5ce7;
   outline: none;
-  box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.1);
 }
 
 .modal-actions {
@@ -506,12 +470,5 @@ onMounted(() => {
   padding: 12px 24px;
   cursor: pointer;
   font-weight: 600;
-  font-size: 14px;
-  transition: all 0.2s ease;
-}
-
-.btn-secondary:hover {
-  background: #edf2f7;
-  color: #2d3748;
 }
 </style>

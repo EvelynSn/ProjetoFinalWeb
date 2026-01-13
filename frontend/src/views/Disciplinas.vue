@@ -1,10 +1,10 @@
 <template>
   <div class="disciplinas-container">
     <div class="page-header">
-      <h1>Catálogo de disciplinas</h1>
+      <h1>Catálogo de Disciplinas</h1>
       <button class="btn-primary" @click="showAddModal = true">
         <span>➕</span>
-        Nova disciplina
+        Nova Disciplina
       </button>
     </div>
     
@@ -20,14 +20,10 @@
         <tbody>
           <tr v-for="disciplina in disciplinas" :key="disciplina.id">
             <td class="disciplina-nome">{{ disciplina.nome }}</td>
-            <td>{{ disciplina.horas }}</td>
+            <td>{{ disciplina.horas }}h</td>
             <td class="actions">
-              <button class="btn-icon" @click="editDisciplina(disciplina)" title="Editar">
-                ✏️
-              </button>
-              <button class="btn-icon btn-danger" @click="deleteDisciplina(disciplina.id)" title="Excluir">
-                🗑️
-              </button>
+              <button class="btn-icon" @click="editDisciplina(disciplina)" title="Editar">✏️</button>
+              <button class="btn-icon btn-danger" @click="deleteDisciplina(disciplina.id)" title="Excluir">🗑️</button>
             </td>
           </tr>
         </tbody>
@@ -42,19 +38,34 @@
         </div>
         <div class="modal-body">
           <form @submit.prevent="saveDisciplina">
+            
             <div class="form-group">
               <label>Nome *</label>
-              <input v-model="form.nome" type="text" required>
+              <input 
+                v-model="form.nome" 
+                type="text" 
+                title="Digite o nome completo da disciplina"
+                required
+              >
             </div>
+
             <div class="form-group">
-              <label>Horas *</label>
-              <input v-model="form.horas" type="number" required min="1">
+              <label>Carga Horária *</label>
+              <input 
+                v-model.number="form.horas" 
+                type="number" 
+                @input="validateHoras"
+                :class="{ 'input-error': errors.horas }"
+                title="A carga horária deve ser entre 32 e 64 horas"
+                placeholder="Ex: 40"
+                required
+              >
+              <span v-if="errors.horas" class="error-text">{{ errors.horas }}</span>
             </div>
+
             <div class="modal-actions">
-              <button type="button" class="btn-secondary" @click="closeModal">
-                Cancelar
-              </button>
-              <button type="submit" class="btn-primary">
+              <button type="button" class="btn-secondary" @click="closeModal">Cancelar</button>
+              <button type="submit" class="btn-primary" :disabled="hasErrors">
                 {{ editingDisciplina ? 'Atualizar' : 'Salvar' }}
               </button>
             </div>
@@ -66,7 +77,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import api from "../services/api";
 
 const disciplinas = ref([]);
@@ -76,6 +87,30 @@ const form = ref({
   nome: '',
   horas: ''
 });
+
+// Estado de erros
+const errors = ref({
+  horas: ''
+});
+
+// Bloqueia o botão se houver erro ou campo vazio
+const hasErrors = computed(() => {
+  return errors.value.horas !== "" || form.value.horas === "";
+});
+
+// Validação em tempo real
+const validateHoras = () => {
+  const h = form.value.horas;
+  if (h === "" || h === null) {
+    errors.value.horas = "";
+  } else if (h < 32) {
+    errors.value.horas = "A carga horária mínima é de 32 horas.";
+  } else if (h > 64) {
+    errors.value.horas = "A carga horária máxima é de 64 horas.";
+  } else {
+    errors.value.horas = "";
+  }
+};
 
 const loadDisciplinas = async () => {
   try {
@@ -93,6 +128,9 @@ const editDisciplina = (disciplina) => {
 };
 
 const saveDisciplina = async () => {
+  validateHoras();
+  if (hasErrors.value) return;
+
   try {
     if (editingDisciplina.value) {
       await api.put(`/disciplinas/${editingDisciplina.value.id}`, form.value);
@@ -120,10 +158,8 @@ const deleteDisciplina = async (id) => {
 const closeModal = () => {
   showAddModal.value = false;
   editingDisciplina.value = null;
-  form.value = {
-    nome: '',
-    horas: ''
-  };
+  form.value = { nome: '', horas: '' };
+  errors.value = { horas: '' };
 };
 
 onMounted(loadDisciplinas);
@@ -135,15 +171,13 @@ onMounted(loadDisciplinas);
 .disciplinas-container {
   padding: 32px;
   background: #fdfffe;
-  min-height: 100%;
-  width: 100%;
-  box-sizing: border-box;
-  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
 }
 
-/* Page Header - Estilo Dashboard */
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -153,14 +187,12 @@ onMounted(loadDisciplinas);
 
 .page-header h1 {
   margin: 0;
-  color: #000000;
+  color: #000;
   font-size: 36px;
   font-weight: 700;
   font-family: 'Poppins', sans-serif;
-  letter-spacing: -0.5px;
 }
 
-/* Botão Primário Roxo com Efeito Shimmer */
 .btn-primary {
   background: #6c5ce7;
   color: white;
@@ -174,34 +206,18 @@ onMounted(loadDisciplinas);
   font-size: 16px;
   font-weight: 600;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.25);
-  position: relative;
-  overflow: hidden;
-  font-family: 'Inter', sans-serif;
 }
 
-.btn-primary::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
-}
-
-.btn-primary:hover::before {
-  left: 100%;
-}
-
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background: #5f4fd1;
   transform: translateY(-3px);
-  box-shadow: 0 6px 16px rgba(108, 92, 231, 0.3);
 }
 
-/* Tabela e Container */
+.btn-primary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
 .table-container {
   background: white;
   border-radius: 20px;
@@ -219,30 +235,18 @@ onMounted(loadDisciplinas);
   background: #f8f9fa;
   padding: 20px;
   text-align: left;
-  font-weight: 700;
-  font-size: 13px;
   color: #6c5ce7;
-  letter-spacing: 0.5px;
+  font-size: 12px;
   text-transform: uppercase;
+  font-weight: 700;
 }
 
 .data-table td {
   padding: 18px 20px;
   border-bottom: 1px solid #f8f9fa;
-  color: #1a1a1a;
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 14px;
 }
 
-.disciplina-nome {
-  font-weight: 600;
-}
-
-.data-table tbody tr:hover {
-  background: #fdfdff;
-}
-
-/* Ações e Ícones */
 .actions {
   display: flex;
   gap: 10px;
@@ -250,19 +254,17 @@ onMounted(loadDisciplinas);
 
 .btn-icon {
   background: #f3f0ff;
+  color: #6c5ce7;
   border: none;
-  cursor: pointer;
-  font-size: 18px;
   padding: 8px 12px;
   border-radius: 10px;
-  transition: all 0.2s ease;
-  color: #6c5ce7;
+  cursor: pointer;
+  transition: 0.2s;
 }
 
 .btn-icon:hover {
   background: #6c5ce7;
   color: white;
-  transform: translateY(-2px);
 }
 
 .btn-icon.btn-danger {
@@ -275,7 +277,20 @@ onMounted(loadDisciplinas);
   color: white;
 }
 
-/* Modal Estilizado */
+/* Modal e Erros */
+.error-text {
+  color: #ff4d4d;
+  font-size: 12px;
+  margin-top: 4px;
+  display: block;
+  font-weight: 500;
+}
+
+.input-error {
+  border-color: #ff4d4d !important;
+  background-color: #fffafa !important;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -296,6 +311,19 @@ onMounted(loadDisciplinas);
   width: 500px;
   max-width: 90%;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .modal-header {
@@ -304,13 +332,6 @@ onMounted(loadDisciplinas);
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-family: 'Poppins', sans-serif;
-  font-weight: 700;
-  font-size: 22px;
 }
 
 .btn-close {
@@ -342,14 +363,16 @@ onMounted(loadDisciplinas);
   border: 2px solid #f0f0f0;
   border-radius: 12px;
   padding: 12px 16px;
-  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: #f8f9fa;
   box-sizing: border-box;
 }
 
 .form-group input:focus {
   border-color: #6c5ce7;
+  background: white;
   outline: none;
-  box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.1);
 }
 
 .modal-actions {

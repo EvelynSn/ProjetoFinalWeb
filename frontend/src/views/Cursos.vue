@@ -5,7 +5,10 @@
         <h1>Cursos</h1>
         <p>Gerencie os cursos oferecidos pela instituição</p>
       </div>
-      <button class="btn-primary" @click="showAddModal = true">
+      <button 
+        class="btn-primary" 
+        @click="showAddModal = true"
+      >
         <span>➕</span>
         Novo curso
       </button>
@@ -25,12 +28,20 @@
           <tr v-for="curso in cursos" :key="curso.id">
             <td>{{ curso.nome }}</td>
             <td>{{ curso.codigo }}</td>
-            <td>{{ curso.horas }}</td>
+            <td>{{ curso.horas }}h</td>
             <td class="actions">
-              <button class="btn-icon" @click="editCurso(curso)" title="Editar">
+              <button 
+                class="btn-icon" 
+                @click="editCurso(curso)" 
+                title="Editar"
+              >
                 ✏️
               </button>
-              <button class="btn-icon btn-danger" @click="deleteCurso(curso.id)" title="Excluir">
+              <button 
+                class="btn-icon btn-danger" 
+                @click="deleteCurso(curso.id)" 
+                title="Excluir"
+              >
                 🗑️
               </button>
             </td>
@@ -38,7 +49,6 @@
         </tbody>
       </table>
     </div>
-
 
     <div v-if="showAddModal" class="modal-overlay">
       <div class="modal">
@@ -48,23 +58,56 @@
         </div>
         <div class="modal-body">
           <form @submit.prevent="saveCurso">
+            
             <div class="form-group">
               <label>Nome *</label>
-              <input v-model="form.nome" type="text" required>
+              <input 
+                v-model="form.nome" 
+                type="text" 
+                title="Informe o nome completo do curso"
+                required
+              >
             </div>
+
             <div class="form-group">
               <label>Código *</label>
-              <input v-model="form.codigo" type="text" required>
+              <input 
+                v-model="form.codigo" 
+                type="text" 
+                title="Digite o código identificador do curso"
+                required
+              >
             </div>
+
             <div class="form-group">
-              <label>Horas *</label>
-              <input v-model="form.horas" type="number" required min="1">
+              <label>Carga Horária (Horas) *</label>
+              <input 
+                v-model.number="form.horas" 
+                type="number" 
+                @input="validateHoras"
+                :class="{ 'input-error': errors.horas }"
+                title="A carga horária total deve ser entre 2400 e 7200 horas"
+                placeholder="Ex: 3000"
+                required
+              >
+              <span v-if="errors.horas" class="error-text">
+                {{ errors.horas }}
+              </span>
             </div>
+
             <div class="modal-actions">
-              <button type="button" class="btn-secondary" @click="closeModal">
+              <button 
+                type="button" 
+                class="btn-secondary" 
+                @click="closeModal"
+              >
                 Cancelar
               </button>
-              <button type="submit" class="btn-primary">
+              <button 
+                type="submit" 
+                class="btn-primary" 
+                :disabled="hasErrors"
+              >
                 {{ editingCurso ? 'Atualizar' : 'Salvar' }}
               </button>
             </div>
@@ -76,7 +119,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import api from "../services/api";
 
 const cursos = ref([]);
@@ -87,6 +130,30 @@ const form = ref({
   codigo: '',
   horas: ''
 });
+
+// Estado de erros para validação
+const errors = ref({
+  horas: ''
+});
+
+// Computada para validar se o formulário pode ser enviado
+const hasErrors = computed(() => {
+  return errors.value.horas !== "" || form.value.horas === "" || form.value.nome === "";
+});
+
+// Validação em tempo real da carga horária
+const validateHoras = () => {
+  const h = form.value.horas;
+  if (h === "" || h === null) {
+    errors.value.horas = "";
+  } else if (h < 2400) {
+    errors.value.horas = "A carga horária mínima é de 2400 horas.";
+  } else if (h > 7200) {
+    errors.value.horas = "A carga horária máxima é de 7200 horas.";
+  } else {
+    errors.value.horas = "";
+  }
+};
 
 const loadCursos = async () => {
   try {
@@ -104,6 +171,9 @@ const editCurso = (curso) => {
 };
 
 const saveCurso = async () => {
+  validateHoras();
+  if (hasErrors.value) return;
+
   try {
     if (editingCurso.value) {
       await api.put(`/cursos/${editingCurso.value.id}`, form.value);
@@ -136,6 +206,9 @@ const closeModal = () => {
     codigo: '',
     horas: ''
   };
+  errors.value = {
+    horas: ''
+  };
 };
 
 onMounted(loadCursos);
@@ -154,7 +227,6 @@ onMounted(loadCursos);
   display: flex;
   flex-direction: column;
 }
-
 
 .page-header {
   display: flex;
@@ -198,25 +270,17 @@ onMounted(loadCursos);
   font-family: 'Inter', sans-serif;
 }
 
-.btn-primary::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
-}
-
-.btn-primary:hover::before {
-  left: 100%;
-}
-
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background: #5f4fd1;
   transform: translateY(-3px);
   box-shadow: 0 6px 16px rgba(108, 92, 231, 0.3);
+}
+
+.btn-primary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
 .table-container {
@@ -287,7 +351,19 @@ onMounted(loadCursos);
   color: white;
 }
 
-/* Modal e Overlay */
+.error-text {
+  color: #ff4d4d;
+  font-size: 12px;
+  margin-top: 4px;
+  display: block;
+  font-weight: 500;
+}
+
+.input-error {
+  border-color: #ff4d4d !important;
+  background-color: #fffafa !important;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -309,6 +385,19 @@ onMounted(loadCursos);
   max-width: 90%;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
   border: none;
+  overflow: hidden;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .modal-header {
@@ -339,7 +428,6 @@ onMounted(loadCursos);
   padding: 32px;
 }
 
-/* Formulário no Modal */
 .form-group {
   margin-bottom: 20px;
 }
@@ -360,11 +448,13 @@ onMounted(loadCursos);
   font-family: 'Inter', sans-serif;
   box-sizing: border-box;
   transition: all 0.3s ease;
+  background: #f8f9fa;
 }
 
 .form-group input:focus {
   border-color: #6c5ce7;
   outline: none;
+  background: white;
   box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.1);
 }
 
