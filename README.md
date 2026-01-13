@@ -59,7 +59,7 @@ O banco de dados SQLite é criado automaticamente ao iniciar o backend.
 
 ## Protótipo do sistema
 
-* **Veja o protótipo [aqui] (https://www.figma.com/design/cajQt9MfpZrj03HJ0h8AtQ/Sistema-Academico?node-id=0-1&t=is8YeCXVdynTArkw-1)** 
+* **Veja o protótipo aqui: https://www.figma.com/design/cajQt9MfpZrj03HJ0h8AtQ/Sistema-Academico?node-id=0-1&t=is8YeCXVdynTArkw-1** 
 
 ---
 ---
