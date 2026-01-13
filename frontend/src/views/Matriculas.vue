@@ -211,12 +211,15 @@ const turmaSelecionada = ref(null);
 const turmasComAlunos = computed(() => {
   const mapa = {};
   matriculas.value.forEach((m) => {
-    const turmaId = m.Turma.id;
-    if (!mapa[turmaId]) {
-      mapa[turmaId] = { turma: m.Turma, alunos: [] };
-    }
-    if (m.status === "ATIVA") {
-      mapa[turmaId].alunos.push(m.Aluno);
+    // Adicionada verificação: só processa se m.Turma não for nulo
+    if (m.Turma && m.Turma.id) {
+      const turmaId = m.Turma.id;
+      if (!mapa[turmaId]) {
+        mapa[turmaId] = { turma: m.Turma, alunos: [] };
+      }
+      if (m.status === "ATIVA" && m.Aluno) {
+        mapa[turmaId].alunos.push(m.Aluno);
+      }
     }
   });
   return Object.values(mapa);
