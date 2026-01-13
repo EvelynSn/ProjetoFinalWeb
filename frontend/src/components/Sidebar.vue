@@ -1,7 +1,8 @@
 <template>
   <nav class="sidebar">
     <div class="sidebar-header">
-      <h3>UFC - Russas</h3>
+    <h3> SIGEEDU </h3>
+      <h4>UFC - Russas</h4>
     </div>
     <div class="sidebar-menu">
       <router-link to="/" class="sidebar-item">
