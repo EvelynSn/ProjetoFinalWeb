@@ -1,5 +1,13 @@
 
 
+## Equipe do Trabalho
+
+* Evelyn de Sena Cavalcante
+* Patrick Glauber Oliveira da Silva
+* Ingrid Letícia Marques de Sousa
+* Éverton da Cunha Sousa
+
+---
 ## Tecnologias Utilizadas
 
 * Frontend: Vue.js 3
@@ -7,7 +15,6 @@
 * Banco de Dados: SQLite
 
 ---
-
 ## Instalação
 
 ### Pré-requisitos
@@ -36,7 +43,7 @@ npm run dev
 ## Execução
 
 * Backend: `http://localhost:3000`
-* Frontend: `http://localhost:8080`
+* Frontend: `http://localhost:5173`
 
 O banco de dados SQLite é criado automaticamente ao iniciar o backend.
 
