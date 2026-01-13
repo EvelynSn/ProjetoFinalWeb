@@ -57,4 +57,9 @@ O banco de dados SQLite é criado automaticamente ao iniciar o backend.
 * **Disciplinas**: cadastro e associação com professores
 * **Atividades**: cadastro e acompanhamento de atividades acadêmicas
 
+## Protótipo do sistema
+
+* **Veja o protótipo [aqui] (https://www.figma.com/design/cajQt9MfpZrj03HJ0h8AtQ/Sistema-Academico?node-id=0-1&t=is8YeCXVdynTArkw-1)** 
+
+---
 ---
