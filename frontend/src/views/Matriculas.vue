@@ -25,7 +25,6 @@
       </div>
     </div>
 
-    <!-- ALUNOS DA TURMA -->
     <div v-if="turmaSelecionada" class="alunos-panel">
       <div class="panel-header">
         <h3>Alunos da Turma {{ turmaSelecionada.turma.id }}</h3>
@@ -54,7 +53,7 @@
         </li>
       </ul>
     </div>
-<br>
+    <br>
 
     <div class="matriculas-cards">
       <div class="matricula-card">
@@ -115,10 +114,7 @@
                 :key="turma.id"
                 :value="turma.id"
               >
-                {{ turma.disciplina_nome || turma.disciplina?.nome }} -
-                {{ turma.professor_nome || turma.professor?.nome }} ({{
-                  turma.horario
-                }})
+                {{ getDisciplinaNome(turma.DisciplinaId) }} - {{ turma.horario }}
               </option>
             </select>
           </div>
@@ -169,10 +165,7 @@
                 :key="turma.id"
                 :value="turma.id"
               >
-                {{ turma.disciplina_nome || turma.disciplina?.nome }} -
-                {{ turma.professor_nome || turma.professor?.nome }} ({{
-                  turma.horario
-                }})
+                {{ getDisciplinaNome(turma.DisciplinaId) }} - {{ turma.horario }}
               </option>
             </select>
           </div>
@@ -204,43 +197,36 @@ import api from "../services/api";
 
 const alunos = ref([]);
 const turmas = ref([]);
+const disciplinas = ref([]); // Adicionado para buscar os nomes
 
 const showMatricularModal = ref(false);
 const showCancelarModal = ref(false);
 
-const matriculaForm = ref({
-  aluno_id: "",
-  turma_id: "",
-});
-
-const cancelarForm = ref({
-  aluno_id: "",
-  turma_id: "",
-});
+const matriculaForm = ref({ aluno_id: "", turma_id: "" });
+const cancelarForm = ref({ aluno_id: "", turma_id: "" });
 
 const matriculas = ref([]);
 const turmaSelecionada = ref(null);
 
 const turmasComAlunos = computed(() => {
   const mapa = {};
-
   matriculas.value.forEach((m) => {
     const turmaId = m.Turma.id;
-
     if (!mapa[turmaId]) {
-      mapa[turmaId] = {
-        turma: m.Turma,
-        alunos: [],
-      };
+      mapa[turmaId] = { turma: m.Turma, alunos: [] };
     }
-
     if (m.status === "ATIVA") {
       mapa[turmaId].alunos.push(m.Aluno);
     }
   });
-
   return Object.values(mapa);
 });
+
+// Função para retornar o nome da disciplina pelo ID
+const getDisciplinaNome = (id) => {
+  const d = disciplinas.value.find(item => item.id == id);
+  return d ? d.nome : "Turma " + id;
+};
 
 const loadAlunos = async () => {
   try {
@@ -251,10 +237,18 @@ const loadAlunos = async () => {
   }
 };
 
+const loadDisciplinas = async () => {
+  try {
+    const response = await api.get("/disciplinas");
+    disciplinas.value = response.data;
+  } catch (error) {
+    console.error("Erro ao carregar disciplinas:", error);
+  }
+};
+
 const loadTurmas = async () => {
   try {
     const response = await api.get("/turmas");
-    console.log(response);
     turmas.value = response.data;
   } catch (error) {
     console.error("Erro ao carregar turmas:", error);
@@ -265,37 +259,25 @@ const loadMatriculas = async () => {
   try {
     const response = await api.get("/matriculas");
     matriculas.value = response.data;
-    console.log(matriculas.value);
   } catch (error) {
     console.error("Erro ao carregar matrículas:", error);
   }
 };
 
-const turmasDisponiveis = computed(() => {
-  return turmas.value;
-});
-
-const turmasMatriculadas = computed(() => {
-  return turmas.value;
-});
+const turmasDisponiveis = computed(() => turmas.value);
+const turmasMatriculadas = computed(() => turmas.value);
 
 const realizarMatricula = async () => {
   try {
-    const response = await api.post("/matriculas", {
+    await api.post("/matriculas", {
       alunoId: matriculaForm.value.aluno_id,
       turmaId: matriculaForm.value.turma_id,
     });
-
-    console.log(response);
     alert("Matrícula realizada com sucesso!");
-
     showMatricularModal.value = false;
     matriculaForm.value = { aluno_id: "", turma_id: "" };
-
     loadMatriculas();
-    loadTurmas();
   } catch (error) {
-    console.error(error);
     alert(error.response?.data?.error || "Erro ao matricular");
   }
 };
@@ -303,31 +285,25 @@ const realizarMatricula = async () => {
 const cancelarMatricula = async () => {
   try {
     const matricula = matriculas.value.find(
-      (m) =>
-        m.AlunoId == cancelarForm.value.aluno_id &&
-        m.TurmaId == cancelarForm.value.turma_id &&
-        m.status === "ATIVA"
+      (m) => m.AlunoId == cancelarForm.value.aluno_id && m.TurmaId == cancelarForm.value.turma_id && m.status === "ATIVA"
     );
-
     if (!matricula) {
       alert("Matrícula não encontrada!");
       return;
     }
-
     await api.put(`/matriculas/${matricula.id}/cancelar`);
-
     showCancelarModal.value = false;
     cancelarForm.value = { aluno_id: "", turma_id: "" };
     loadMatriculas();
     alert("Matrícula cancelada com sucesso!");
   } catch (error) {
-    console.error(error);
     alert("Erro ao cancelar matrícula");
   }
 };
 
 onMounted(() => {
   loadAlunos();
+  loadDisciplinas(); // Carrega as disciplinas para o select funcionar
   loadTurmas();
   loadMatriculas();
 });
@@ -495,8 +471,15 @@ onMounted(() => {
 }
 
 .btn-secondary {
-  background: #f1f2f6;
-  color: #2d3436;
+background: #6c5ce7;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 700;
+  cursor: pointer;
+  flex: 1;
+  transition: all 0.3s ease;
 }
 
 .btn-secondary:hover {
